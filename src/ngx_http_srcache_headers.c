@@ -57,10 +57,6 @@ ngx_http_srcache_header_t  ngx_http_srcache_headers_in[] = {
                  ngx_http_srcache_process_header_line,
                  offsetof(ngx_http_headers_out_t, etag) },
 
-    { ngx_string("Server"),
-                 ngx_http_srcache_process_header_line,
-                 offsetof(ngx_http_headers_out_t, server) },
-
     { ngx_string("WWW-Authenticate"),
                  ngx_http_srcache_process_header_line,
                  offsetof(ngx_http_headers_out_t, www_authenticate) },
