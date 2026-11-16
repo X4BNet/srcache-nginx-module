@@ -37,6 +37,7 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
     ngx_http_post_subrequest_t      *ps;
     ngx_str_t                        skip;
     ngx_uint_t                      *sp; /* status pointer */
+    unsigned                         no_store;
 
     dd_enter();
     dd("srcache header filter");
@@ -150,6 +151,20 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
         return ngx_http_srcache_next_header_filter(r);
     }
 #endif
+
+    if (r == r->main && slcf->req_cache_control) {
+        /* A request may forbid storing without forbidding a cache lookup. */
+        ngx_http_srcache_request_no_cache(r, &no_store);
+
+        if (no_store) {
+            ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                           "srcache_store skipped due to request header "
+                           "\"Cache-Control: no-store\"");
+
+            ctx->store_skip = 1;
+            return ngx_http_srcache_next_header_filter(r);
+        }
+    }
 
     if (!slcf->ignore_content_encoding
         && r->headers_out.content_encoding
