@@ -65,6 +65,7 @@ typedef struct {
 
     ngx_flag_t                       req_cache_control;
     ngx_flag_t                       resp_cache_control;
+    ngx_flag_t                       shared_cache;
 
     ngx_flag_t                       store_private;
     ngx_flag_t                       store_no_store;
@@ -111,6 +112,7 @@ struct ngx_http_srcache_ctx_s {
                                                      ngx_buf_t *b);
 
     time_t                           valid_sec;
+    time_t                           store_expire;
 
     ngx_http_status_t                status;
     ngx_buf_t                       *header_buf;

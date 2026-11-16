@@ -74,7 +74,14 @@ ngx_http_srcache_expire_variable(ngx_http_request_t *r,
         return NGX_OK;
     }
 
-    if (ctx->valid_sec == 0) {
+    if (conf->shared_cache) {
+        expire = ctx->store_expire > 0 ? ctx->store_expire
+                                      : ctx->valid_sec - ngx_time();
+        if (expire < 0) {
+            expire = 0;
+        }
+
+    } else if (ctx->valid_sec == 0) {
         expire = conf->default_expire;
 
     } else {

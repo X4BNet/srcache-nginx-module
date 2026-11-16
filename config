@@ -7,6 +7,7 @@ HTTP_SRCACHE_FILTER_SRCS="                                                  \
                         $ngx_addon_dir/src/ngx_http_srcache_store.c         \
                         $ngx_addon_dir/src/ngx_http_srcache_fetch.c         \
                         $ngx_addon_dir/src/ngx_http_srcache_headers.c       \
+                        $ngx_addon_dir/src/ngx_http_srcache_policy.c        \
                         "
 
 HTTP_SRCACHE_FILTER_DEPS="                                                  \
@@ -17,6 +18,7 @@ HTTP_SRCACHE_FILTER_DEPS="                                                  \
                         $ngx_addon_dir/src/ngx_http_srcache_fetch.h         \
                         $ngx_addon_dir/src/ngx_http_srcache_store.h         \
                         $ngx_addon_dir/src/ngx_http_srcache_headers.h       \
+                        $ngx_addon_dir/src/ngx_http_srcache_policy.h        \
                         "
 
 # nginx 1.17.0+ unconditionally enables the postpone filter

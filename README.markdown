@@ -854,6 +854,63 @@ See also [srcache_response_cache_control](#srcache_response_cache_control).
 
 [Back to TOC](#table-of-contents)
 
+srcache_shared_cache
+--------------------
+**syntax:** *srcache_shared_cache on|off*
+
+**default:** *srcache_shared_cache off*
+
+**context:** *http, server, location*
+
+Opt into conservative shared HTTP cache eligibility and freshness. Configurations
+that omit this directive retain the legacy behavior described elsewhere below.
+Application `srcache_fetch_skip` and `srcache_store_skip` expressions remain
+additional vetoes; they cannot override the shared-cache safety checks.
+
+Client Authorization and Range headers bypass cache lookups. Range requests,
+206/Content-Range responses, nonempty Vary, and positive, malformed, or repeated
+Age fields cannot be stored. An absent Age or one decimal zero Age is eligible.
+Authorized responses require explicit `public`, `must-revalidate`, or a valid
+`s-maxage` before they can be stored. Credentials added by `proxy_set_header`
+are not client Authorization headers.
+
+In shared-cache mode, `srcache_response_cache_control on` honors response
+`private`, `no-cache`, and `no-store`. Setting it `off` permits forced caching
+despite those prohibitions. It is the sole prohibition override in this mode:
+`srcache_store_private`, `srcache_store_no_cache`, and `srcache_store_no_store`
+only override individual prohibitions in legacy mode. `srcache_store_ranges`
+cannot disable shared-cache Range safety. Freshness and other shared safety
+checks apply with either response-cache-control setting.
+
+Freshness is selected in this order: `s-maxage`, `max-age`, `Expires`, then
+`srcache_default_expire`. All repeated Cache-Control fields are processed with
+case-insensitive complete directive names, optional whitespace and quoted
+numeric values. Unknown extensions and quoted commas are not directives.
+A selected freshness directive must occur exactly once and contain a decimal
+value from 1 through 999999999. Malformed, excessive, duplicate, zero or expired
+selected freshness prevents storage rather than falling back. A valid
+`s-maxage` takes precedence even over a malformed or zero `max-age`.
+
+`srcache_max_expire` caps the deadline when response headers arrive, including
+Expires and default freshness. `$srcache_expire` reports the remaining lifetime;
+its positive value is fixed while constructing the storage subrequest. Storage
+is canceled if the body consumes that lifetime, so a zero TTL is never sent to
+an external cache as an accidental request for indefinite retention. Configure
+the storage endpoint to use `$srcache_expire`, for example:
+
+```nginx
+srcache_shared_cache on;
+srcache_store PUT /cache/write key=$escaped_key&exptime=$srcache_expire;
+```
+
+Request cache control remains controlled by `srcache_request_cache_control`.
+When enabled, request `no-cache` bypasses lookup but can store a replacement;
+request `no-store` permits an existing lookup but forbids storage, including on
+a fresh key. Internal cache read/write subrequests are excluded from the policy.
+Variant storage, revalidation, and full Age calculation are not implemented.
+
+[Back to TOC](#table-of-contents)
+
 srcache_response_cache_control
 ------------------------------
 **syntax:** *srcache_response_cache_control on|off*

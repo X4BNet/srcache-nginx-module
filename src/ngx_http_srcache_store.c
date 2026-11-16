@@ -13,6 +13,7 @@
 #include "ngx_http_srcache_store.h"
 #include "ngx_http_srcache_fetch.h"
 #include "ngx_http_srcache_util.h"
+#include "ngx_http_srcache_policy.h"
 #include <assert.h>
 
 
@@ -179,8 +180,10 @@ ngx_http_srcache_header_filter(ngx_http_request_t *r)
         return ngx_http_srcache_next_header_filter(r);
     }
 
-    if (slcf->resp_cache_control
-        && ngx_http_srcache_response_no_cache(r, slcf, ctx) == NGX_OK)
+    if ((slcf->shared_cache
+         && ngx_http_srcache_shared_response(r, slcf, ctx) != NGX_OK)
+        || (!slcf->shared_cache && slcf->resp_cache_control
+            && ngx_http_srcache_response_no_cache(r, slcf, ctx) == NGX_OK))
     {
         ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "srcache_store skipped due to response header "
@@ -553,6 +556,17 @@ ngx_http_srcache_store_subrequest(ngx_http_request_t *r,
     if (conf->store == NULL) {
         dd("conf store is NULL");
         return NGX_ERROR;
+    }
+
+    if (conf->shared_cache) {
+        /* Freeze the value used by the store arguments after checking it.
+         * Re-evaluating across a clock tick must never send a zero TTL. */
+        ctx->store_expire = ctx->valid_sec - ngx_time();
+        if (ctx->store_expire <= 0) {
+            ctx->store_response = 0;
+            ctx->store_skip = 1;
+            return NGX_OK;
+        }
     }
 
     parsed_sr = ngx_palloc(r->pool, sizeof(ngx_http_srcache_parsed_request_t));

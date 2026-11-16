@@ -56,6 +56,23 @@ ngx_http_srcache_access_handler(ngx_http_request_t *r)
         return NGX_DECLINED;
     }
 
+    if (conf->shared_cache
+        && (r->headers_in.authorization != NULL
+            || r->headers_in.range != NULL))
+    {
+        /* A bypassed lookup may still produce an explicitly shared response. */
+        ctx = ngx_http_get_module_ctx(r, ngx_http_srcache_filter_module);
+        if (ctx == NULL) {
+            ctx = ngx_pcalloc(r->pool, sizeof(*ctx));
+            if (ctx == NULL) {
+                return NGX_ERROR;
+            }
+            ngx_http_set_ctx(r, ctx, ngx_http_srcache_filter_module);
+        }
+
+        return NGX_DECLINED;
+    }
+
     if (conf->req_cache_control
         && ngx_http_srcache_request_no_cache(r, &no_store) == NGX_OK)
     {
@@ -66,8 +83,7 @@ ngx_http_srcache_access_handler(ngx_http_request_t *r)
         if (!no_store) {
             /* register a ctx to give a chance to srcache_store to run */
 
-            ctx = ngx_pcalloc(r->pool,
-                              sizeof(ngx_http_srcache_filter_module));
+            ctx = ngx_pcalloc(r->pool, sizeof(*ctx));
 
             if (ctx == NULL) {
                 return NGX_ERROR;
@@ -95,7 +111,7 @@ ngx_http_srcache_access_handler(ngx_http_request_t *r)
 
         /* register a ctx to give a chance to srcache_store to run */
 
-        ctx = ngx_pcalloc(r->pool, sizeof(ngx_http_srcache_filter_module));
+        ctx = ngx_pcalloc(r->pool, sizeof(*ctx));
 
         if (ctx == NULL) {
             return NGX_ERROR;
@@ -189,7 +205,7 @@ ngx_http_srcache_access_handler(ngx_http_request_t *r)
         }
 
     } else {
-        ctx = ngx_pcalloc(r->pool, sizeof(ngx_http_srcache_filter_module));
+        ctx = ngx_pcalloc(r->pool, sizeof(*ctx));
 
         if (ctx == NULL) {
             return NGX_ERROR;
